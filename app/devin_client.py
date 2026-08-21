@@ -19,6 +19,10 @@ BASE = f"{config.DEVIN_API_BASE}/organizations/{config.DEVIN_ORG_ID}"
 
 # Statuses after which a session will not make further progress.
 TERMINAL_STATUSES = {"exit", "error", "suspended"}
+def is_complete(session: dict) -> bool:
+    """Done = hard-terminal status, or running with sub-status 'finished'."""
+    return (session.get("status") in TERMINAL_STATUSES
+            or extract_status_detail(session) == "finished")
 
 
 def build_prompt(repo: str, issue_number: int, issue_title: str, issue_body: str) -> str:

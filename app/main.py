@@ -136,9 +136,14 @@ async def poll_once():
         status = session.get("status", "")
         detail = devin_client.extract_status_detail(session)
         pr_url = devin_client.extract_pr_url(session)
+        if pr_url is None:
+            try:
+                pr_url = await github_client.find_pr_for_branch(f"devin/issue-{number}")
+            except Exception as e:  # noqa: BLE001
+                store.log_event(number, "warn", f"PR lookup failed: {e}")
 
-        if status in devin_client.TERMINAL_STATUSES:
-            success = status == "exit" and pr_url is not None
+        if devin_client.is_complete(session):
+            success = pr_url is not None and status != "error"
             final = "succeeded" if success else "failed"
             store.update_status(number, final, status_detail=detail, pr_url=pr_url,
                                 error=None if success else f"terminal status={status}",

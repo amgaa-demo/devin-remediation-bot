@@ -15,3 +15,14 @@ async def comment_on_issue(issue_number: int, body: str):
     async with httpx.AsyncClient(timeout=30) as client:
         r = await client.post(url, headers=HEADERS, json={"body": body})
         r.raise_for_status()
+
+async def find_pr_for_branch(branch: str) -> str | None:
+    """Find a PR whose head is the given branch. Source-of-truth success check."""
+    owner = config.GITHUB_REPO.split("/")[0]
+    url = f"https://api.github.com/repos/{config.GITHUB_REPO}/pulls"
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.get(url, headers=HEADERS,
+                             params={"head": f"{owner}:{branch}", "state": "all"})
+        r.raise_for_status()
+        prs = r.json()
+    return prs[0]["html_url"] if prs else None
